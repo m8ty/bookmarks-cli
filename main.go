@@ -77,11 +77,10 @@ func main() {
 		}
 	}
 
-	currentWDList := tview.NewList()
+	// Initial data load
+	updateRecentCommands()
+	updateBookmarks()
 	getCWCommands()
-	for _, command := range currentWDCommands {
-		currentWDList.AddItem(command, "", 0, nil)
-	}
 
 	inputFieldForBookmarks := tview.NewInputField()
 	inputFieldForBookmarks.SetLabel("Search bookmarks: ")
@@ -90,9 +89,6 @@ func main() {
 			return
 		}
 		entries = fuzzy.Find(currentText, currentWDCommands)
-		if len(entries) <= 1 {
-			entries = nil
-		}
 		return
 	})
 	inputFieldForBookmarks.SetDoneFunc(func(key tcell.Key) {
@@ -120,9 +116,6 @@ func main() {
 			return
 		}
 		entries = fuzzy.Find(currentText, recentCommands)
-		if len(entries) <= 1 {
-			entries = nil
-		}
 		return
 	})
 	inputField.SetDoneFunc(func(key tcell.Key) {
@@ -192,11 +185,6 @@ func main() {
 		return event
 	})
 
-	// Initial data load
-	updateRecentCommands()
-	updateBookmarks()
-	getCWCommands()
-
 	// fmt.Println(recentCommands)
 	// fmt.Println(savedCommands)
 
@@ -206,6 +194,11 @@ func main() {
 		recentList.AddItem(command, "", 0, nil)
 	}
 	box.AddItem(recentList, 0, 1, true)
+
+	currentWDList := tview.NewList()
+	for _, command := range currentWDCommands {
+		currentWDList.AddItem(command, "", 0, nil)
+	}
 
 	// Layout
 	flex := tview.NewFlex().
