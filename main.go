@@ -31,7 +31,7 @@ func main() {
 
 	// Function to load shell history and update recent commands
 	updateRecentCommands := func() {
-		output, _ := exec.Command("bash", "-c", "cat ~/.zsh_history | cut -d ';' -f 2- | tail -n 20").Output()
+		output, _ := exec.Command("bash", "-c", "cat ~/.zsh_history | cut -d ';' -f 2- | tail -n 50").Output()
 		commands := strings.Split(string(output), "\n")
 		for _, cmd := range commands {
 			if cmd != "" {
@@ -65,15 +65,6 @@ func main() {
 		return os.WriteFile(bookmarksFile, data, 0644)
 	}
 
-	getBookmarks := func() Bookmarks {
-		var bookmarks Bookmarks
-		data, err := os.ReadFile(bookmarksFile)
-		if err == nil {
-			json.Unmarshal(data, &bookmarks)
-		}
-		return bookmarks
-	}
-
 	getCWCommands := func() {
 		data, err := os.ReadFile(bookmarksFile)
 		if err == nil {
@@ -81,7 +72,7 @@ func main() {
 			json.Unmarshal(data, &bookmarks)
 			cwd, _ := os.Getwd()
 			for _, command := range bookmarks[cwd] {
-				currentWDCommands = append(currentWDCommands, command) // Add to search list
+				currentWDCommands = append(currentWDCommands, command)
 			}
 		}
 	}
@@ -98,10 +89,7 @@ func main() {
 		if len(currentText) == 0 {
 			return
 		}
-		bookmarks := getBookmarks()
-		cwd, _ := os.Getwd()
-		fmt.Println(cwd)
-		entries = fuzzy.Find(currentText, bookmarks[cwd])
+		entries = fuzzy.Find(currentText, currentWDCommands)
 		if len(entries) <= 1 {
 			entries = nil
 		}
@@ -204,16 +192,13 @@ func main() {
 		return event
 	})
 
-	// recentList.SetSelectedFunc(func(index int, mainText, secondaryText string, shortcut rune) {
-	//
-	// })
-
 	// Initial data load
 	updateRecentCommands()
 	updateBookmarks()
+	getCWCommands()
 
-	fmt.Println(recentCommands)
-	fmt.Println(savedCommands)
+	// fmt.Println(recentCommands)
+	// fmt.Println(savedCommands)
 
 	box := tview.NewFlex()
 	recentList := tview.NewList()
