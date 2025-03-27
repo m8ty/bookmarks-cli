@@ -188,22 +188,37 @@ func main() {
 	// fmt.Println(recentCommands)
 	// fmt.Println(savedCommands)
 
-	box := tview.NewFlex()
-	recentList := tview.NewList()
-	for _, command := range recentCommands {
-		recentList.AddItem(command, "", 0, nil)
-	}
-	box.AddItem(recentList, 0, 1, true)
+	recentList := tview.NewTextView()
+	recentList.SetText(strings.Join(recentCommands, "\n"))
+	recentList.SetTitleAlign(tview.AlignLeft)
+	recentList.SetBorder(true)
+	recentList.SetSize(38, 30)
 
-	currentWDList := tview.NewList()
-	for _, command := range currentWDCommands {
-		currentWDList.AddItem(command, "", 0, nil)
-	}
+	currentWDList := tview.NewTextView()
+	currentWDList.SetText(strings.Join(currentWDCommands, "\n"))
+	currentWDList.SetTextAlign(tview.AlignRight)
+	currentWDList.SetTitleAlign(tview.AlignRight)
+	currentWDList.SetBorder(true)
+	currentWDList.SetSize(38, 30)
+
+	form := tview.NewForm()
+	form.SetBorder(true)
+	form.SetTitle("Recent Commands")
+	form.SetTitleAlign(tview.AlignLeft)
+	form.AddFormItem(inputField)
+	form.AddFormItem(recentList)
+
+	form2 := tview.NewForm()
+	form2.SetBorder(true)
+	form2.SetTitle("Bookmarks")
+	form2.SetTitleAlign(tview.AlignRight)
+	form2.AddFormItem(inputFieldForBookmarks)
+	form2.AddFormItem(currentWDList)
 
 	// Layout
 	flex := tview.NewFlex().
-		AddItem(inputField, 0, 1, true).
-		AddItem(box, 0, 3, false).AddItem(inputFieldForBookmarks, 0, 1, true).AddItem(currentWDList, 0, 1, true)
+		AddItem(form, 0, 3, true).
+		AddItem(form2, 0, 3, true)
 
 	// Run the app
 	if err := app.SetRoot(flex, true).EnableMouse(true).Run(); err != nil {
