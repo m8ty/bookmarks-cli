@@ -108,7 +108,7 @@ func main() {
 	})
 
 	// Create input field
-	inputField := tview.NewInputField().SetFieldWidth(20)
+	inputField := tview.NewInputField()
 	inputField.SetLabel("Search history: ")
 	inputField.SetFieldBackgroundColor(tview.Styles.PrimitiveBackgroundColor)
 	inputField.SetAutocompleteFunc(func(currentText string) (entries []string) {
@@ -182,11 +182,19 @@ func main() {
 			return tcell.NewEventKey(tcell.KeyUp, 0, tcell.ModNone)
 		}
 
+		if event.Key() == tcell.KeyRight {
+			app.SetFocus(inputFieldForBookmarks)
+		}
+
 		return event
 	})
 
-	// fmt.Println(recentCommands)
-	// fmt.Println(savedCommands)
+	inputFieldForBookmarks.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyLeft {
+			app.SetFocus(inputField)
+		}
+		return event
+	})
 
 	recentList := tview.NewTextView()
 	recentList.SetText(strings.Join(recentCommands, "\n"))
