@@ -31,7 +31,7 @@ func main() {
 
 	// Function to load shell history and update recent commands
 	updateRecentCommands := func() {
-		output, _ := exec.Command("bash", "-c", "cat ~/.zsh_history | cut -d ';' -f 2- | tail -n 50").Output()
+		output, _ := exec.Command("bash", "-c", "cat ~/.zsh_history | cut -d ';' -f 2- | tail -n 100").Output()
 		commands := strings.Split(string(output), "\n")
 		for _, cmd := range commands {
 			if cmd != "" {
@@ -106,6 +106,8 @@ func main() {
 		}
 
 	})
+
+	recentList := tview.NewTextView()
 
 	// Create input field
 	inputField := tview.NewInputField()
@@ -186,28 +188,59 @@ func main() {
 			app.SetFocus(inputFieldForBookmarks)
 		}
 
+		if event.Key() == tcell.KeyDown {
+			app.SetFocus(recentList)
+		}
+
 		return event
 	})
 
+	currentWDList := tview.NewTextView()
 	inputFieldForBookmarks.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyLeft {
 			app.SetFocus(inputField)
 		}
+
+		if event.Key() == tcell.KeyDown {
+			app.SetFocus(currentWDList)
+		}
 		return event
 	})
 
-	recentList := tview.NewTextView()
 	recentList.SetText(strings.Join(recentCommands, "\n"))
 	recentList.SetTitleAlign(tview.AlignLeft)
 	recentList.SetBorder(true)
 	recentList.SetSize(38, 30)
 
-	currentWDList := tview.NewTextView()
+	recentList.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+
+		if event.Key() == tcell.KeyRight {
+			app.SetFocus(currentWDList)
+		}
+
+		if event.Key() == tcell.KeyUp {
+			app.SetFocus(inputField)
+		}
+
+		return event
+	})
+
 	currentWDList.SetText(strings.Join(currentWDCommands, "\n"))
 	currentWDList.SetTextAlign(tview.AlignRight)
 	currentWDList.SetTitleAlign(tview.AlignRight)
 	currentWDList.SetBorder(true)
 	currentWDList.SetSize(38, 30)
+	currentWDList.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+
+		if event.Key() == tcell.KeyLeft {
+			app.SetFocus(recentList)
+		}
+		if event.Key() == tcell.KeyUp {
+			app.SetFocus(inputFieldForBookmarks)
+		}
+
+		return event
+	})
 
 	form := tview.NewForm()
 	form.SetBorder(true)
