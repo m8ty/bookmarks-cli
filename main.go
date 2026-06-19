@@ -167,6 +167,7 @@ func main() {
 
 	app := tview.NewApplication()
 	var commandToRun string
+	copyOnly := false // when true, copy commandToRun to the clipboard but don't run it
 
 	source := sourceBookmarks
 	sourceName := func() string {
@@ -216,7 +217,7 @@ func main() {
 	list.SetMainTextColor(tcell.ColorDefault)
 	list.SetBorderPadding(0, 0, 1, 1)
 
-	const helpText = "  ↵ run   ⌃A add   ⌃R label   ⌃B bookmark   ⌃D delete   ⌃T toggle   esc quit"
+	const helpText = "  ↵ run   ⌃Y copy   ⌃A add   ⌃R label   ⌃B bookmark   ⌃D delete   ⌃T toggle   esc quit"
 	footer := tview.NewTextView()
 	footer.SetText(helpText)
 	footer.SetTextColor(tcell.ColorGray)
@@ -239,12 +240,25 @@ func main() {
 
 	refreshList := func() {
 		text := strings.TrimSpace(input.GetText())
+		rows := sourceRows()
 		list.Clear()
-		for _, r := range sourceRows() {
-			if text != "" && !fuzzy.Match(text, r.display) {
-				continue
+		// The command is stashed in each item's (hidden) secondary text.
+		if text == "" {
+			for _, r := range rows {
+				list.AddItem(r.display, r.cmd, 0, nil)
 			}
-			// The command is stashed in the (hidden) secondary text.
+			updateTitle()
+			return
+		}
+		// Rank matches by Levenshtein distance so the closest match sorts first.
+		targets := make([]string, len(rows))
+		for i, r := range rows {
+			targets[i] = r.display
+		}
+		ranks := fuzzy.RankFind(text, targets)
+		sort.Sort(ranks)
+		for _, rk := range ranks {
+			r := rows[rk.OriginalIndex]
 			list.AddItem(r.display, r.cmd, 0, nil)
 		}
 		updateTitle()
@@ -450,6 +464,15 @@ func main() {
 		case tcell.KeyCtrlD:
 			deleteBookmark()
 			return nil
+		case tcell.KeyCtrlY:
+			cmd := selected()
+			if cmd == "" {
+				return nil
+			}
+			commandToRun = cmd
+			copyOnly = true
+			app.Stop()
+			return nil
 		case tcell.KeyEsc:
 			app.Stop()
 			return nil
@@ -485,6 +508,11 @@ func main() {
 	copyCmd.Stdin = strings.NewReader(commandToRun)
 	if err := copyCmd.Run(); err != nil {
 		fmt.Fprintln(os.Stderr, "pbcopy:", err)
+	}
+
+	if copyOnly {
+		fmt.Fprintln(os.Stderr, "copied:", commandToRun)
+		return
 	}
 
 	cmd := exec.Command("bash", "-c", commandToRun)
